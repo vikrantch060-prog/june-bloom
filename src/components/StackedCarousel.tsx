@@ -55,7 +55,7 @@ export function StackedCarousel({ items }: Props) {
   if (n === 0) return null;
 
   // render a window of cards around active for perf
-  const window = Array.from({ length: n }, (_, i) => i)
+  const visible = Array.from({ length: n }, (_, i) => i)
     .map((i) => ({ i, off: ringOffset(i, active, n) }))
     .filter(({ off }) => Math.abs(off) <= 3);
 
