@@ -1,25 +1,12 @@
-import { useState, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, animate, PanInfo } from "motion/react";
-import { Sparkles, Play } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Sparkles } from "lucide-react";
 import type { Memory } from "@/lib/days";
 
 interface Props { memory: Memory; index: number; isThird: boolean }
 
 export function DayCard({ memory, index, isThird }: Props) {
   const [revealed, setRevealed] = useState(false);
-  const [activeSlide, setActiveSlide] = useState(0);
-  const x = useMotionValue(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Build media items array from memory
-  const mediaItems = memory.photos.map((p, i) => ({
-    id: `photo-${i}`,
-    kind: "photo" as const,
-    gradient: p.gradient,
-    caption: p.caption,
-  }));
-
-  const totalSlides = mediaItems.length;
 
   return (
     <motion.article
@@ -42,90 +29,29 @@ export function DayCard({ memory, index, isThird }: Props) {
         </div>
       </header>
 
-      {/* Instagram-style swipeable media carousel */}
-      <div className="relative h-56 mb-4 rounded-2xl overflow-hidden">
-        <div ref={containerRef} className="relative w-full h-full">
+      {/* photo collage */}
+      <div className="grid grid-cols-3 grid-rows-2 gap-2 h-56 mb-4">
+        {memory.photos.slice(0, 5).map((p, i) => (
           <motion.div
-            drag="x"
-            dragElastic={0.12}
-            dragMomentum={false}
-            onDragEnd={(_, info: PanInfo) => {
-              const swipeThreshold = 50;
-              const velocityThreshold = 300;
-              const dragDistance = info.offset.x;
-              const velocity = info.velocity.x;
-
-              let newSlide = activeSlide;
-
-              if (Math.abs(velocity) > velocityThreshold) {
-                // High velocity swipe
-                if (velocity > 0 && activeSlide > 0) newSlide = activeSlide - 1;
-                else if (velocity < 0 && activeSlide < totalSlides - 1) newSlide = activeSlide + 1;
-              } else if (Math.abs(dragDistance) > swipeThreshold) {
-                // Distance-based swipe
-                if (dragDistance > 0 && activeSlide > 0) newSlide = activeSlide - 1;
-                else if (dragDistance < 0 && activeSlide < totalSlides - 1) newSlide = activeSlide + 1;
-              }
-
-              setActiveSlide(newSlide);
-              animate(x, -newSlide * 100, { type: "spring", stiffness: 200, damping: 28 });
-            }}
-            style={{ x }}
-            className="absolute inset-0 flex"
+            key={i}
+            whileHover={{ scale: 1.02 }}
+            className={`relative overflow-hidden rounded-2xl ${
+              i === 0 ? "col-span-2 row-span-2" : ""
+            }`}
+            style={{ background: p.gradient }}
           >
-            {mediaItems.map((item, i) => (
-              <motion.div
-                key={item.id}
-                className="relative w-full h-full flex-shrink-0 overflow-hidden"
-                style={{
-                  background: item.gradient,
-                  width: "100%",
-                }}
-              >
-                <div className="absolute inset-0 mix-blend-overlay opacity-30 grain" />
-                {item.caption && (
-                  <div className="absolute bottom-2 left-3 right-3 text-[11px] font-mono text-white/90 truncate">
-                    {item.caption}
-                  </div>
-                )}
-              </motion.div>
-            ))}
+            <div className="absolute inset-0 mix-blend-overlay opacity-30 grain" />
+            {p.caption && (
+              <div className="absolute bottom-1.5 left-2 right-2 text-[10px] font-mono text-white/85 truncate">
+                {p.caption}
+              </div>
+            )}
           </motion.div>
-        </div>
-
-        {/* Pagination dots */}
-        {totalSlides > 1 && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 z-10">
-            {mediaItems.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setActiveSlide(i);
-                  animate(x, -i * 100, { type: "spring", stiffness: 200, damping: 28 });
-                }}
-                className="h-1.5 rounded-full transition-all duration-300"
-                style={{
-                  width: i === activeSlide ? 16 : 5,
-                  background: i === activeSlide
-                    ? "rgba(255,255,255,0.95)"
-                    : "rgba(255,255,255,0.45)",
-                }}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Cinematic corner shadows */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{
-            boxShadow: "inset 0 0 40px rgba(0,0,0,0.15), inset 0 0 80px rgba(0,0,0,0.08)",
-          }}
-        />
+        ))}
       </div>
 
       <p className="font-display italic text-[17px] leading-snug text-pretty text-[var(--foreground)]/90">
-        “{memory.note}”
+        "{memory.note}"
       </p>
 
       <div className="mt-4 flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
