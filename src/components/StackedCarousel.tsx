@@ -73,7 +73,7 @@ export function StackedCarousel({ items }: Props) {
         onDragEnd={onDragEnd}
         style={{ x }}
       >
-        {window.map(({ i, off }) => {
+        {visible.map(({ i, off }) => {
           const item = items[i];
           const step = stepRef.current;
           const isActive = off === 0;
