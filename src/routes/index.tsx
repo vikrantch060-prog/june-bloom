@@ -5,7 +5,7 @@ import { Atmosphere } from "@/components/Atmosphere";
 import { BeginScreen } from "@/components/BeginScreen";
 import { TopBar } from "@/components/TopBar";
 import { Calendar } from "@/components/Calendar";
-import { DayCard } from "@/components/DayCard";
+import { StackedCarousel, type StackItem } from "@/components/StackedCarousel";
 import { MusicBar } from "@/components/MusicBar";
 import { MemoryDialog } from "@/components/MemoryDialog";
 import { NightWhisper } from "@/components/NightWhisper";
