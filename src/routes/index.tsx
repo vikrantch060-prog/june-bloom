@@ -78,13 +78,10 @@ function Home() {
             </p>
           </section>
 
-          <section
-            className="mt-8 flex gap-4 overflow-x-auto no-scrollbar scroll-x-snap px-[7vw] pb-4"
-          >
-            {memories.map((m, i) => (
-              <DayCard key={m.date} memory={m} index={i} isThird={(i + 1) % 3 === 0} />
-            ))}
+          <section className="mt-10">
+            <StackedCarousel items={stackItems} />
           </section>
+
 
           <section className="px-6 max-w-md mx-auto mt-6 text-center">
             <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--muted-foreground)]">
