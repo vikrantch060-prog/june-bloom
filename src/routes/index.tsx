@@ -5,7 +5,7 @@ import { Atmosphere } from "@/components/Atmosphere";
 import { BeginScreen } from "@/components/BeginScreen";
 import { TopBar } from "@/components/TopBar";
 import { Calendar } from "@/components/Calendar";
-import { DayCard } from "@/components/DayCard";
+import { StackedCarousel, type StackItem } from "@/components/StackedCarousel";
 import { MusicBar } from "@/components/MusicBar";
 import { MemoryDialog } from "@/components/MemoryDialog";
 import { NightWhisper } from "@/components/NightWhisper";
@@ -47,6 +47,41 @@ function Home() {
   const current = memories[memories.length - 1];
   const todayIso = new Date().toISOString().slice(0, 10);
 
+  const stackItems = useMemo<StackItem[]>(() => {
+    const items: StackItem[] = [];
+    memories.forEach((m) => {
+      m.photos.forEach((p, idx) => {
+        items.push({
+          id: `${m.date}-p${idx}`,
+          kind: idx === 0 && m.song.youtubeId ? "video" : "photo",
+          date: m.date,
+          title: m.title,
+          gradient: p.gradient,
+          caption: p.caption,
+        });
+      });
+      items.push({
+        id: `${m.date}-note`,
+        kind: "note",
+        date: m.date,
+        title: m.title,
+        text: m.note,
+        gradient: m.photos[0]?.gradient ?? "linear-gradient(135deg,#1B263B,#415A77)",
+      });
+      if (m.surprise) {
+        items.push({
+          id: `${m.date}-secret`,
+          kind: "secret",
+          date: m.date,
+          title: "a small thing",
+          text: m.surprise.content,
+          gradient: "linear-gradient(160deg,#0D1B2A,#415A77)",
+        });
+      }
+    });
+    return items;
+  }, [memories]);
+
   return (
     <div className="relative min-h-[100dvh] vignette overflow-x-hidden">
       <Atmosphere mode={mode} />
@@ -78,13 +113,10 @@ function Home() {
             </p>
           </section>
 
-          <section
-            className="mt-8 flex gap-4 overflow-x-auto no-scrollbar scroll-x-snap px-[7vw] pb-4"
-          >
-            {memories.map((m, i) => (
-              <DayCard key={m.date} memory={m} index={i} isThird={(i + 1) % 3 === 0} />
-            ))}
+          <section className="mt-10">
+            <StackedCarousel items={stackItems} />
           </section>
+
 
           <section className="px-6 max-w-md mx-auto mt-6 text-center">
             <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--muted-foreground)]">
