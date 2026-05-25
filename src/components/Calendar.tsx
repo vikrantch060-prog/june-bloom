@@ -1,19 +1,15 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Lock, X } from "lucide-react";
-import { MEMORIES, FUTURE } from "@/lib/days";
+import type { DaySlot } from "@/lib/memory-types";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onPick: (date: string) => void;
-  todayIso: string;
+  slots: DaySlot[];
 }
 
-export function Calendar({ open, onClose, onPick, todayIso }: Props) {
-  const past = MEMORIES.map(m => ({ date: m.date, title: m.title, locked: false }));
-  const future = FUTURE.map(f => ({ date: f.date, title: f.title, locked: true }));
-  const all = [...past, ...future];
-
+export function Calendar({ open, onClose, onPick, slots }: Props) {
   return (
     <AnimatePresence>
       {open && (
@@ -40,8 +36,8 @@ export function Calendar({ open, onClose, onPick, todayIso }: Props) {
             </div>
 
             <div className="overflow-y-auto no-scrollbar p-3 space-y-2">
-              {all.map((d) => {
-                const isToday = d.date === todayIso;
+              {slots.map((d) => {
+                const title = d.memory?.title ?? (d.locked ? "soon" : "a quiet day");
                 return (
                   <button
                     key={d.date}
@@ -51,15 +47,15 @@ export function Calendar({ open, onClose, onPick, todayIso }: Props) {
                       ${d.locked
                         ? "opacity-50 cursor-not-allowed bg-[var(--muted)]"
                         : "bg-[var(--card)] hover:scale-[1.01] active:scale-[0.99]"}
-                      ${isToday ? "ring-1 ring-[var(--primary)]" : ""}`}
+                      ${d.isToday ? "ring-1 ring-[var(--primary)]" : ""}`}
                   >
                     <div className="font-mono text-xs tabular-nums text-[var(--muted-foreground)] w-20">
                       {new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}
                     </div>
-                    <div className="flex-1 truncate font-display text-[15px]">{d.title}</div>
+                    <div className="flex-1 truncate font-display text-[15px]">{title}</div>
                     {d.locked
                       ? <Lock size={14} className="opacity-70" />
-                      : isToday && <span className="text-[10px] uppercase tracking-widest text-[var(--primary)]">today</span>}
+                      : d.isToday && <span className="text-[10px] uppercase tracking-widest text-[var(--primary)]">today</span>}
                   </button>
                 );
               })}
