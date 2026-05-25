@@ -1,14 +1,13 @@
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
-import { getMemory } from "@/lib/days";
+import type { Memory } from "@/lib/memory-types";
 
 interface Props {
-  date: string | null;
+  memory: Memory | null;
   onClose: () => void;
 }
 
-export function MemoryDialog({ date, onClose }: Props) {
-  const memory = date ? getMemory(date) : undefined;
+export function MemoryDialog({ memory, onClose }: Props) {
   return (
     <AnimatePresence>
       {memory && (
@@ -35,18 +34,33 @@ export function MemoryDialog({ date, onClose }: Props) {
             <div className="grid grid-cols-2 gap-2 mb-5">
               {memory.photos.map((p, i) => (
                 <div key={i} className="aspect-[4/5] rounded-2xl overflow-hidden relative" style={{ background: p.gradient }}>
+                  {p.url && (
+                    <img src={p.url} alt={p.caption ?? memory.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                  )}
                   <div className="grain absolute inset-0 opacity-40" />
                   {p.caption && <div className="absolute bottom-2 left-2 right-2 text-[10px] font-mono text-white/85">{p.caption}</div>}
                 </div>
               ))}
             </div>
 
-            <p className="font-display italic text-lg text-pretty mb-5">“{memory.note}”</p>
+            {memory.note && (
+              <p className="font-display italic text-lg text-pretty mb-5">“{memory.note}”</p>
+            )}
 
-            <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)] border-t border-[var(--border)] pt-4">
-              <div className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
-              <span><span className="text-[var(--foreground)]">{memory.song.title}</span> · {memory.song.artist}</span>
-            </div>
+            {memory.extraNotes.length > 0 && (
+              <div className="space-y-2 mb-5">
+                {memory.extraNotes.map((n, i) => (
+                  <p key={i} className="text-sm text-[var(--muted-foreground)] text-pretty">{n}</p>
+                ))}
+              </div>
+            )}
+
+            {memory.song.title && (
+              <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)] border-t border-[var(--border)] pt-4">
+                <div className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
+                <span><span className="text-[var(--foreground)]">{memory.song.title}</span> · {memory.song.artist}</span>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

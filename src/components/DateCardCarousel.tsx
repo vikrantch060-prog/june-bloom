@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from "motion/react";
-import { Play, Sparkles } from "lucide-react";
-import type { Memory } from "@/lib/days";
+import { Play, Sparkles, Lock } from "lucide-react";
+import type { Memory } from "@/lib/memory-types";
+import { placeholderGradient } from "@/lib/memory-types";
 
-type MediaItem =
-  | { kind: "photo"; gradient: string; caption?: string }
-  | { kind: "video"; gradient: string; caption?: string }
+type Slide =
+  | { kind: "photo"; url?: string; gradient: string; caption?: string }
+  | { kind: "video"; url?: string; gradient: string; caption?: string }
   | { kind: "note"; gradient: string; text: string };
 
 interface Props {
   memories: Memory[];
+  initialIndex?: number;
 }
 
-export function DateCardCarousel({ memories }: Props) {
-  const [activeDate, setActiveDate] = useState(memories.length - 1);
+export function DateCardCarousel({ memories, initialIndex }: Props) {
+  const start = typeof initialIndex === "number" ? initialIndex : memories.length - 1;
+  const [activeDate, setActiveDate] = useState(Math.max(0, start));
   const xOuter = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef(0);
@@ -92,18 +95,34 @@ export function DateCardCarousel({ memories }: Props) {
 function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
   const [revealed, setRevealed] = useState(false);
 
-  // Build single-viewport media flow: photos + note (+ first photo as 'video' if youtubeId present)
-  const media = useMemo<MediaItem[]>(() => {
-    const items: MediaItem[] = memory.photos.map((p, idx) => ({
-      kind: idx === 1 && memory.song.youtubeId ? "video" : "photo",
-      gradient: p.gradient,
-      caption: p.caption,
-    }));
-    items.push({
-      kind: "note",
-      gradient: memory.photos[0]?.gradient ?? "linear-gradient(135deg,#1B263B,#415A77)",
-      text: memory.note,
-    });
+  // Build viewport: prefer real media URLs; fall back to gradient placeholders; append note slide.
+  const media = useMemo<Slide[]>(() => {
+    const items: Slide[] = [];
+    if (memory.media.length > 0) {
+      memory.media.forEach((m, i) => {
+        items.push({
+          kind: m.kind,
+          url: m.url,
+          gradient: placeholderGradient(memory.date, i),
+          caption: m.caption,
+        });
+      });
+    } else {
+      memory.photos.forEach((p, i) => {
+        items.push({
+          kind: i === 1 && memory.song.youtubeId ? "video" : "photo",
+          gradient: p.gradient,
+          caption: p.caption,
+        });
+      });
+    }
+    if (memory.note) {
+      items.push({
+        kind: "note",
+        gradient: placeholderGradient(memory.date, items.length),
+        text: memory.note,
+      });
+    }
     return items;
   }, [memory]);
 
@@ -256,7 +275,7 @@ function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
   );
 }
 
-function MediaSlide({ item }: { item: MediaItem }) {
+function MediaSlide({ item }: { item: Slide }) {
   if (item.kind === "note") {
     return (
       <div
@@ -283,6 +302,24 @@ function MediaSlide({ item }: { item: MediaItem }) {
       className="relative w-full h-full flex-shrink-0"
       style={{ background: item.gradient }}
     >
+      {item.kind === "photo" && item.url && (
+        <img
+          src={item.url}
+          alt={item.caption ?? ""}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
+      {item.kind === "video" && item.url && (
+        <video
+          src={item.url}
+          muted
+          loop
+          playsInline
+          autoPlay
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
       <div className="absolute inset-0 grain opacity-30 mix-blend-overlay" />
       <div
         className="absolute inset-0"
@@ -291,7 +328,7 @@ function MediaSlide({ item }: { item: MediaItem }) {
             "inset 0 0 40px rgba(0,0,0,0.18), inset 0 0 80px rgba(0,0,0,0.1)",
         }}
       />
-      {item.kind === "video" && (
+      {item.kind === "video" && !item.url && (
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div
             animate={{ scale: [1, 1.06, 1] }}
@@ -310,3 +347,40 @@ function MediaSlide({ item }: { item: MediaItem }) {
     </div>
   );
 }
+
+// Locked future-day card with chain/lock visual.
+export function LockedDayCard({ date, title }: { date: string; title?: string }) {
+  const weekday = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
+  const dateLabel = new Date(date).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  return (
+    <article
+      className="shrink-0 w-[86vw] max-w-[380px] glass rounded-[28px] p-5 relative opacity-70"
+      style={{
+        boxShadow:
+          "0 30px 60px -30px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
+      }}
+    >
+      <header className="flex items-baseline justify-between mb-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.28em] text-[var(--muted-foreground)]">{weekday}</div>
+          <h2 className="font-display text-[24px] leading-tight mt-0.5 text-[var(--muted-foreground)]">{title ?? "soon"}</h2>
+        </div>
+        <div className="font-mono text-[10px] text-[var(--muted-foreground)] pt-1">{dateLabel}</div>
+      </header>
+      <div
+        className="relative h-64 rounded-2xl overflow-hidden flex items-center justify-center"
+        style={{ background: placeholderGradient(date) }}
+      >
+        <div className="absolute inset-0 grain opacity-30 mix-blend-overlay" />
+        <div className="relative flex flex-col items-center gap-2 text-white/85">
+          <Lock size={20} />
+          <span className="font-mono text-[10px] uppercase tracking-[0.3em]">locked</span>
+        </div>
+      </div>
+      <p className="mt-4 font-display italic text-sm text-[var(--muted-foreground)] text-center">
+        comes alive on {dateLabel}
+      </p>
+    </article>
+  );
+}
+
