@@ -80,7 +80,7 @@ function Home() {
           </section>
 
           <section className="mt-10">
-            <StackedCarousel items={stackItems} />
+            <DateCardCarousel memories={memories} />
           </section>
 
 
