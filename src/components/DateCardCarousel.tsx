@@ -95,18 +95,34 @@ export function DateCardCarousel({ memories, initialIndex }: Props) {
 function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
   const [revealed, setRevealed] = useState(false);
 
-  // Build single-viewport media flow: photos + note (+ first photo as 'video' if youtubeId present)
-  const media = useMemo<MediaItem[]>(() => {
-    const items: MediaItem[] = memory.photos.map((p, idx) => ({
-      kind: idx === 1 && memory.song.youtubeId ? "video" : "photo",
-      gradient: p.gradient,
-      caption: p.caption,
-    }));
-    items.push({
-      kind: "note",
-      gradient: memory.photos[0]?.gradient ?? "linear-gradient(135deg,#1B263B,#415A77)",
-      text: memory.note,
-    });
+  // Build viewport: prefer real media URLs; fall back to gradient placeholders; append note slide.
+  const media = useMemo<Slide[]>(() => {
+    const items: Slide[] = [];
+    if (memory.media.length > 0) {
+      memory.media.forEach((m, i) => {
+        items.push({
+          kind: m.kind,
+          url: m.url,
+          gradient: placeholderGradient(memory.date, i),
+          caption: m.caption,
+        });
+      });
+    } else {
+      memory.photos.forEach((p, i) => {
+        items.push({
+          kind: i === 1 && memory.song.youtubeId ? "video" : "photo",
+          gradient: p.gradient,
+          caption: p.caption,
+        });
+      });
+    }
+    if (memory.note) {
+      items.push({
+        kind: "note",
+        gradient: placeholderGradient(memory.date, items.length),
+        text: memory.note,
+      });
+    }
     return items;
   }, [memory]);
 
