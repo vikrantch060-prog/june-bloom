@@ -16,7 +16,7 @@ interface Props {
 
 export function DateCardCarousel({ memories, initialIndex }: Props) {
   const start = typeof initialIndex === "number" ? initialIndex : memories.length - 1;
-  const [activeDate, setActiveDate] = useState(memories.length - 1);
+  const [activeDate, setActiveDate] = useState(Math.max(0, start));
   const xOuter = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef(0);
