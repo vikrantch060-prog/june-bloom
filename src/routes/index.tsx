@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Atmosphere } from "@/components/Atmosphere";
 import { BeginScreen } from "@/components/BeginScreen";
 import { TopBar } from "@/components/TopBar";
@@ -10,7 +11,14 @@ import { MusicBar } from "@/components/MusicBar";
 import { MemoryDialog } from "@/components/MemoryDialog";
 import { NightWhisper } from "@/components/NightWhisper";
 import { getMode } from "@/lib/time";
-import { getUnlockedToday } from "@/lib/days";
+import { getMemoryArchive } from "@/lib/memories.functions";
+import { buildSlots, todayIso, type Memory } from "@/lib/memory-types";
+
+const archiveQueryOptions = queryOptions({
+  queryKey: ["memory-archive"],
+  queryFn: () => getMemoryArchive(),
+  staleTime: 5 * 60 * 1000,
+});
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,24 +37,31 @@ export const Route = createFileRoute("/")({
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=JetBrains+Mono:wght@400&display=swap" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(archiveQueryOptions),
   component: Home,
 });
 
 function Home() {
+  const { data } = useSuspenseQuery(archiveQueryOptions);
+  const { meta, memories, error } = data;
+
   const [mode, setMode] = useState(getMode());
   const [started, setStarted] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [openDate, setOpenDate] = useState<string | null>(null);
+  const [openMemory, setOpenMemory] = useState<Memory | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setMode(getMode()), 60_000);
     return () => clearInterval(t);
   }, []);
 
-  const memories = useMemo(() => getUnlockedToday(), []);
-  const current = memories[memories.length - 1];
-  const todayIso = new Date().toISOString().slice(0, 10);
-
+  const today = todayIso();
+  const slots = useMemo(() => buildSlots(meta, memories, today), [meta, memories, today]);
+  const unlocked = useMemo(
+    () => slots.filter((s) => !s.locked && s.memory).map((s) => s.memory!),
+    [slots],
+  );
+  const current = unlocked[unlocked.length - 1];
 
   return (
     <div className="relative min-h-[100dvh] vignette overflow-x-hidden">
@@ -70,19 +85,31 @@ function Home() {
               {mode === "morning" ? "lazy romance" : mode === "evening" ? "cozy bookstore" : "stargazing"}
             </div>
             <h1 className="font-display text-4xl leading-[1.05] text-balance">
-              {memories.length === 0
+              {unlocked.length === 0
                 ? "the very beginning"
-                : "today, & every day before it."}
+                : meta.heroTitle ?? "today, & every day before it."}
             </h1>
             <p className="mt-3 text-[14px] text-[var(--muted-foreground)] text-pretty">
-              swipe through the stack. every third day hides a small thing.
+              swipe through the stack. every hidden message arrives in its own time.
             </p>
+            {error && (
+              <p className="mt-3 text-[11px] font-mono text-[var(--muted-foreground)] opacity-70">
+                · waiting for the archive to sync ({error}) ·
+              </p>
+            )}
           </section>
 
           <section className="mt-10">
-            <DateCardCarousel memories={memories} />
+            {unlocked.length > 0 ? (
+              <DateCardCarousel memories={unlocked} />
+            ) : (
+              <div className="px-6 max-w-md mx-auto text-center">
+                <p className="font-display italic text-lg text-[var(--muted-foreground)]">
+                  the first memory unlocks today. add a row to the archive to begin.
+                </p>
+              </div>
+            )}
           </section>
-
 
           <section className="px-6 max-w-md mx-auto mt-6 text-center">
             <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--muted-foreground)]">
@@ -101,11 +128,15 @@ function Home() {
       <Calendar
         open={calendarOpen}
         onClose={() => setCalendarOpen(false)}
-        onPick={(d) => { setCalendarOpen(false); setOpenDate(d); }}
-        todayIso={todayIso}
+        onPick={(d) => {
+          setCalendarOpen(false);
+          const m = memories.find((mm) => mm.date === d);
+          if (m) setOpenMemory(m);
+        }}
+        slots={slots}
       />
 
-      <MemoryDialog date={openDate} onClose={() => setOpenDate(null)} />
+      <MemoryDialog memory={openMemory} onClose={() => setOpenMemory(null)} />
 
       <NightWhisper />
     </div>
