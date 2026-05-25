@@ -275,7 +275,7 @@ function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
   );
 }
 
-function MediaSlide({ item }: { item: MediaItem }) {
+function MediaSlide({ item }: { item: Slide }) {
   if (item.kind === "note") {
     return (
       <div
