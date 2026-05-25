@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from "motion/react";
-import { Play, Sparkles } from "lucide-react";
-import type { Memory } from "@/lib/days";
+import { Play, Sparkles, Lock } from "lucide-react";
+import type { Memory } from "@/lib/memory-types";
+import { placeholderGradient } from "@/lib/memory-types";
 
-type MediaItem =
-  | { kind: "photo"; gradient: string; caption?: string }
-  | { kind: "video"; gradient: string; caption?: string }
+type Slide =
+  | { kind: "photo"; url?: string; gradient: string; caption?: string }
+  | { kind: "video"; url?: string; gradient: string; caption?: string }
   | { kind: "note"; gradient: string; text: string };
 
 interface Props {
   memories: Memory[];
+  initialIndex?: number;
 }
 
 export function DateCardCarousel({ memories }: Props) {
