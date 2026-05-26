@@ -22,14 +22,18 @@ export interface MetaConfig {
   launchDate: string; // YYYY-MM-DD
   finalDate: string; // YYYY-MM-DD
   heroTitle?: string;
+  finalCardText?: string;
 }
 
 export interface DaySlot {
   date: string;
   locked: boolean;
   isToday: boolean;
+  isFinal: boolean;
   memory?: Memory;
 }
+
+export const FINAL_DATE_ISO = "2026-06-23";
 
 // Soft fallback gradients used when a row has no media URLs yet.
 const PLACEHOLDER_GRADIENTS = [
@@ -47,10 +51,11 @@ export function placeholderGradient(seed: string, i = 0): string {
   return PLACEHOLDER_GRADIENTS[(h + i) % PLACEHOLDER_GRADIENTS.length];
 }
 
+/** Today's date string in YYYY-MM-DD using IST (UTC+5:30) */
 export function todayIso(now = new Date()): string {
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(now.getTime() + istOffset);
+  return istDate.toISOString().slice(0, 10);
 }
 
 export function isUnlocked(date: string, today = todayIso()): boolean {
@@ -69,9 +74,11 @@ export function buildSlots(meta: MetaConfig, memories: Memory[], today = todayIs
       date: iso,
       locked: iso > today,
       isToday: iso === today,
+      isFinal: iso === FINAL_DATE_ISO,
       memory: byDate.get(iso),
     });
     cursor.setDate(cursor.getDate() + 1);
   }
   return slots;
 }
+
