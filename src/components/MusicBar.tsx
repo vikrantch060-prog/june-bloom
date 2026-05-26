@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronUp } from "lucide-react";
 
@@ -12,6 +12,11 @@ interface Props {
 export function MusicBar({ title, artist, visible, spotifyId }: Props) {
   const [expanded, setExpanded] = useState(false);
 
+  // Auto-open the player whenever a new track arrives so it starts playing.
+  useEffect(() => {
+    if (spotifyId) setExpanded(true);
+  }, [spotifyId]);
+
   return (
     <AnimatePresence>
       {visible && (
@@ -22,28 +27,32 @@ export function MusicBar({ title, artist, visible, spotifyId }: Props) {
           transition={{ type: "spring", stiffness: 220, damping: 26 }}
           className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-[min(92vw,440px)]"
         >
-          <AnimatePresence>
-            {expanded && spotifyId && (
-              <motion.div
-                initial={{ height: 0, opacity: 0, y: 10 }}
-                animate={{ height: 152, opacity: 1, y: 0 }}
-                exit={{ height: 0, opacity: 0, y: 10 }}
-                transition={{ type: "spring", stiffness: 220, damping: 26 }}
-                className="overflow-hidden mb-2 rounded-2xl glass"
-              >
-                <iframe
-                  src={`https://open.spotify.com/embed/track/${spotifyId}?utm_source=generator&theme=0`}
-                  width="100%"
-                  height="152"
-                  frameBorder={0}
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  title="Spotify player"
-                  style={{ border: 0, display: "block" }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Keep iframe mounted at all times so audio doesn't cut when minimised.
+              Only height/opacity animate; the player keeps playing. */}
+          {spotifyId && (
+            <motion.div
+              animate={{
+                height: expanded ? 152 : 0,
+                opacity: expanded ? 1 : 0,
+                marginBottom: expanded ? 8 : 0,
+              }}
+              initial={false}
+              transition={{ type: "spring", stiffness: 220, damping: 26 }}
+              className="overflow-hidden rounded-2xl glass"
+            >
+              <iframe
+                key={spotifyId}
+                src={`https://open.spotify.com/embed/track/${spotifyId}?utm_source=generator&theme=0&autoplay=1`}
+                width="100%"
+                height="152"
+                frameBorder={0}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                title="Spotify player"
+                style={{ border: 0, display: "block" }}
+              />
+            </motion.div>
+          )}
 
           <div className="glass rounded-full pl-2 pr-4 py-2 flex items-center gap-3">
             <button

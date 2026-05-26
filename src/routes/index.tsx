@@ -134,10 +134,10 @@ function Home() {
       )}
 
       <MusicBar
-        visible={started && !!current && !showFinal}
-        title={current?.song.title ?? ""}
-        artist={current?.song.artist ?? ""}
-        spotifyId={current?.song.spotifyId}
+        visible={started && !!(openMemory ?? current) && !showFinal}
+        title={(openMemory ?? current)?.song.title ?? ""}
+        artist={(openMemory ?? current)?.song.artist ?? ""}
+        spotifyId={(openMemory ?? current)?.song.spotifyId}
       />
 
 
