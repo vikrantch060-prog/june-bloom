@@ -94,6 +94,7 @@ function parseMeta(rows: Record<string, string>[], fallback: MetaConfig): MetaCo
     launchDate: map.get("launch_date") || fallback.launchDate,
     finalDate: map.get("final_date") || fallback.finalDate,
     heroTitle: map.get("hero_title") || fallback.heroTitle,
+    finalCardText: map.get("final_card_text") || fallback.finalCardText,
   };
 }
 
@@ -104,6 +105,7 @@ export const getMemoryArchive = createServerFn({ method: "GET" }).handler(
       launchDate: today,
       finalDate: "2026-06-23",
       heroTitle: "today, & every day before it.",
+      finalCardText: "every day was a love letter. this was the last page.",
     };
 
     const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
