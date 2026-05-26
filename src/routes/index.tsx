@@ -10,7 +10,8 @@ import { DateCardCarousel } from "@/components/DateCardCarousel";
 import { MusicBar } from "@/components/MusicBar";
 import { MemoryDialog } from "@/components/MemoryDialog";
 import { NightWhisper } from "@/components/NightWhisper";
-import { getMode } from "@/lib/time";
+import { FinalReveal } from "@/components/FinalReveal";
+import { getMode, isFinalDate } from "@/lib/time";
 import { getMemoryArchive } from "@/lib/memories.functions";
 import { buildSlots, todayIso, type Memory } from "@/lib/memory-types";
 
