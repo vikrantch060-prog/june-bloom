@@ -43,8 +43,8 @@ function parseMemories(rows: Record<string, string>[]): Memory[] {
   const out: Memory[] = [];
   for (const r of rows) {
     if (!r.date) continue;
-    const photoUrls = splitList(r.photos);
-    const videoUrls = splitList(r.videos);
+    const photoUrls = splitList(r.photos).map(normaliseCloudinaryUrl);
+    const videoUrls = splitList(r.videos).map(normaliseCloudinaryUrl);
     const notes = splitList(r.notes);
     const media: MediaItem[] = [
       ...photoUrls.map((url) => ({ kind: inferMediaKind(url), url })),
@@ -70,6 +70,7 @@ function parseMemories(rows: Record<string, string>[]): Memory[] {
         title: r.song_title || "",
         artist: r.song_artist || "",
         youtubeId: r.youtube_id || undefined,
+        spotifyId: r.spotify_id || undefined,
       },
       media,
       photos,
