@@ -11,7 +11,7 @@ export interface Memory {
   title: string;
   note: string; // primary quote / text memory
   extraNotes: string[]; // additional text memories
-  song: { title: string; artist: string; youtubeId?: string };
+  song: { title: string; artist: string; youtubeId?: string; spotifyId?: string };
   media: MediaItem[];
   // legacy compatibility for existing components expecting `photos` w/ gradient
   photos: { caption?: string; gradient: string; url?: string }[];
