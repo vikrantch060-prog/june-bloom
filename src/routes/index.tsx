@@ -10,7 +10,8 @@ import { DateCardCarousel } from "@/components/DateCardCarousel";
 import { MusicBar } from "@/components/MusicBar";
 import { MemoryDialog } from "@/components/MemoryDialog";
 import { NightWhisper } from "@/components/NightWhisper";
-import { getMode } from "@/lib/time";
+import { FinalReveal } from "@/components/FinalReveal";
+import { getMode, isFinalDate } from "@/lib/time";
 import { getMemoryArchive } from "@/lib/memories.functions";
 import { buildSlots, todayIso, type Memory } from "@/lib/memory-types";
 
@@ -47,6 +48,7 @@ function Home() {
 
   const [mode, setMode] = useState(getMode());
   const [started, setStarted] = useState(false);
+  const [showFinal, setShowFinal] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [openMemory, setOpenMemory] = useState<Memory | null>(null);
 
@@ -58,20 +60,32 @@ function Home() {
   const today = todayIso();
   const slots = useMemo(() => buildSlots(meta, memories, today), [meta, memories, today]);
   const unlocked = useMemo(
-    () => slots.filter((s) => !s.locked && s.memory).map((s) => s.memory!),
+    () => slots.filter((s) => !s.locked && s.memory && !s.isFinal).map((s) => s.memory!),
     [slots],
   );
   const current = unlocked[unlocked.length - 1];
+  const finalCardText = meta.finalCardText ?? "every day was a love letter. this was the last page.";
+
+  const handleBegin = () => {
+    setStarted(true);
+    if (isFinalDate()) {
+      setTimeout(() => setShowFinal(true), 600);
+    }
+  };
 
   return (
     <div className="relative min-h-[100dvh] vignette overflow-x-hidden">
       <Atmosphere mode={mode} />
 
       <AnimatePresence mode="wait">
-        {!started && <BeginScreen onBegin={() => setStarted(true)} />}
+        {!started && <BeginScreen onBegin={handleBegin} />}
       </AnimatePresence>
 
-      {started && (
+      <AnimatePresence>
+        {showFinal && <FinalReveal text={finalCardText} />}
+      </AnimatePresence>
+
+      {started && !showFinal && (
         <motion.main
           initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -120,10 +134,12 @@ function Home() {
       )}
 
       <MusicBar
-        visible={started && !!current}
+        visible={started && !!current && !showFinal}
         title={current?.song.title ?? ""}
         artist={current?.song.artist ?? ""}
+        spotifyId={current?.song.spotifyId}
       />
+
 
       <Calendar
         open={calendarOpen}

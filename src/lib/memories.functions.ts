@@ -16,9 +16,18 @@ function splitList(v: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function normaliseCloudinaryUrl(url: string): string {
+  if (!url || !url.includes("cloudinary.com")) return url;
+  if (/\/upload\//.test(url) && !/f_auto/.test(url)) {
+    return url.replace("/upload/", "/upload/f_auto,q_auto/");
+  }
+  return url;
+}
+
 function inferMediaKind(url: string): "photo" | "video" {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ? "video" : "photo";
 }
+
 
 function rowsToObjects(values: string[][]): Record<string, string>[] {
   if (!values || values.length < 2) return [];
@@ -34,8 +43,8 @@ function parseMemories(rows: Record<string, string>[]): Memory[] {
   const out: Memory[] = [];
   for (const r of rows) {
     if (!r.date) continue;
-    const photoUrls = splitList(r.photos);
-    const videoUrls = splitList(r.videos);
+    const photoUrls = splitList(r.photos).map(normaliseCloudinaryUrl);
+    const videoUrls = splitList(r.videos).map(normaliseCloudinaryUrl);
     const notes = splitList(r.notes);
     const media: MediaItem[] = [
       ...photoUrls.map((url) => ({ kind: inferMediaKind(url), url })),
@@ -61,6 +70,7 @@ function parseMemories(rows: Record<string, string>[]): Memory[] {
         title: r.song_title || "",
         artist: r.song_artist || "",
         youtubeId: r.youtube_id || undefined,
+        spotifyId: r.spotify_id || undefined,
       },
       media,
       photos,
@@ -84,6 +94,7 @@ function parseMeta(rows: Record<string, string>[], fallback: MetaConfig): MetaCo
     launchDate: map.get("launch_date") || fallback.launchDate,
     finalDate: map.get("final_date") || fallback.finalDate,
     heroTitle: map.get("hero_title") || fallback.heroTitle,
+    finalCardText: map.get("final_card_text") || fallback.finalCardText,
   };
 }
 
@@ -94,6 +105,7 @@ export const getMemoryArchive = createServerFn({ method: "GET" }).handler(
       launchDate: today,
       finalDate: "2026-06-23",
       heroTitle: "today, & every day before it.",
+      finalCardText: "every day was a love letter. this was the last page.",
     };
 
     const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
