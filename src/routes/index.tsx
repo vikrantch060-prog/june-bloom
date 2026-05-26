@@ -48,6 +48,7 @@ function Home() {
 
   const [mode, setMode] = useState(getMode());
   const [started, setStarted] = useState(false);
+  const [showFinal, setShowFinal] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [openMemory, setOpenMemory] = useState<Memory | null>(null);
 
@@ -59,10 +60,18 @@ function Home() {
   const today = todayIso();
   const slots = useMemo(() => buildSlots(meta, memories, today), [meta, memories, today]);
   const unlocked = useMemo(
-    () => slots.filter((s) => !s.locked && s.memory).map((s) => s.memory!),
+    () => slots.filter((s) => !s.locked && s.memory && !s.isFinal).map((s) => s.memory!),
     [slots],
   );
   const current = unlocked[unlocked.length - 1];
+  const finalCardText = meta.finalCardText ?? "every day was a love letter. this was the last page.";
+
+  const handleBegin = () => {
+    setStarted(true);
+    if (isFinalDate()) {
+      setTimeout(() => setShowFinal(true), 600);
+    }
+  };
 
   return (
     <div className="relative min-h-[100dvh] vignette overflow-x-hidden">
