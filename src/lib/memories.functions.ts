@@ -16,9 +16,18 @@ function splitList(v: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function normaliseCloudinaryUrl(url: string): string {
+  if (!url || !url.includes("cloudinary.com")) return url;
+  if (/\/upload\//.test(url) && !/f_auto/.test(url)) {
+    return url.replace("/upload/", "/upload/f_auto,q_auto/");
+  }
+  return url;
+}
+
 function inferMediaKind(url: string): "photo" | "video" {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ? "video" : "photo";
 }
+
 
 function rowsToObjects(values: string[][]): Record<string, string>[] {
   if (!values || values.length < 2) return [];
