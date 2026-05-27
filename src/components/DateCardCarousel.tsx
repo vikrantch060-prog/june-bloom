@@ -168,11 +168,8 @@ function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
     snapInner(idx + moved);
   }
 
-  const weekday = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-  });
+  const weekday = formatDateLabel(memory.date, { weekday: "long" });
+  const dateLabel = formatDateLabel(memory.date, { month: "short", day: "2-digit" });
 
   return (
     <motion.article
