@@ -50,7 +50,7 @@ export function Calendar({ open, onClose, onPick, slots }: Props) {
                       ${d.isToday ? "ring-1 ring-[var(--primary)]" : ""}`}
                   >
                     <div className="font-mono text-xs tabular-nums text-[var(--muted-foreground)] w-20">
-                      {new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}
+                      {new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" })}
                     </div>
                     <div className="flex-1 truncate font-display text-[15px]">{title}</div>
                     {d.locked

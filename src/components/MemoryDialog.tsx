@@ -27,7 +27,7 @@ export function MemoryDialog({ memory, onClose }: Props) {
               <X size={16} />
             </button>
             <div className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
-              {new Date(memory.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+              {new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </div>
             <h2 className="font-display text-3xl mt-1 mb-4 text-balance">{memory.title}</h2>
 

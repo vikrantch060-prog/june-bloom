@@ -63,7 +63,13 @@ function Home() {
     () => slots.filter((s) => !s.locked && s.memory && !s.isFinal).map((s) => s.memory!),
     [slots],
   );
-  const current = unlocked[unlocked.length - 1];
+  const todayIdx = useMemo(() => {
+    const i = unlocked.findIndex((m) => m.date === today);
+    return i >= 0 ? i : Math.max(0, unlocked.length - 1);
+  }, [unlocked, today]);
+  const [activeIndex, setActiveIndex] = useState(todayIdx);
+  useEffect(() => { setActiveIndex(todayIdx); }, [todayIdx]);
+  const activeMemory = unlocked[activeIndex] ?? unlocked[unlocked.length - 1];
   const finalCardText = meta.finalCardText ?? "every day was a love letter. this was the last page.";
 
   const handleBegin = () => {
@@ -115,7 +121,11 @@ function Home() {
 
           <section className="mt-10">
             {unlocked.length > 0 ? (
-              <DateCardCarousel memories={unlocked} />
+              <DateCardCarousel
+                memories={unlocked}
+                activeIndex={activeIndex}
+                onActiveChange={setActiveIndex}
+              />
             ) : (
               <div className="px-6 max-w-md mx-auto text-center">
                 <p className="font-display italic text-lg text-[var(--muted-foreground)]">
@@ -134,10 +144,10 @@ function Home() {
       )}
 
       <MusicBar
-        visible={started && !!(openMemory ?? current) && !showFinal}
-        title={(openMemory ?? current)?.song.title ?? ""}
-        artist={(openMemory ?? current)?.song.artist ?? ""}
-        spotifyId={(openMemory ?? current)?.song.spotifyId}
+        visible={started && !!activeMemory && !showFinal}
+        title={activeMemory?.song.title ?? ""}
+        artist={activeMemory?.song.artist ?? ""}
+        spotifyId={activeMemory?.song.spotifyId}
       />
 
 
@@ -146,8 +156,8 @@ function Home() {
         onClose={() => setCalendarOpen(false)}
         onPick={(d) => {
           setCalendarOpen(false);
-          const m = memories.find((mm) => mm.date === d);
-          if (m) setOpenMemory(m);
+          const idx = unlocked.findIndex((m) => m.date === d);
+          if (idx >= 0) setActiveIndex(idx);
         }}
         slots={slots}
       />

@@ -12,11 +12,15 @@ type Slide =
 interface Props {
   memories: Memory[];
   initialIndex?: number;
+  activeIndex?: number;
+  onActiveChange?: (i: number) => void;
 }
 
-export function DateCardCarousel({ memories, initialIndex }: Props) {
+export function DateCardCarousel({ memories, initialIndex, activeIndex, onActiveChange }: Props) {
   const start = typeof initialIndex === "number" ? initialIndex : memories.length - 1;
-  const [activeDate, setActiveDate] = useState(Math.max(0, start));
+  const [internalActive, setInternalActive] = useState(Math.max(0, start));
+  const isControlled = typeof activeIndex === "number";
+  const activeDate = isControlled ? activeIndex! : internalActive;
   const xOuter = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef(0);
@@ -33,7 +37,8 @@ export function DateCardCarousel({ memories, initialIndex }: Props) {
 
   function snap(next: number) {
     const clamped = Math.max(0, Math.min(memories.length - 1, next));
-    setActiveDate(clamped);
+    if (!isControlled) setInternalActive(clamped);
+    onActiveChange?.(clamped);
     animate(xOuter, -clamped * stepRef.current, {
       type: "spring",
       stiffness: 180,
@@ -41,11 +46,15 @@ export function DateCardCarousel({ memories, initialIndex }: Props) {
     });
   }
 
+  // Re-snap whenever the active index changes (including from external controllers).
   useEffect(() => {
-    // re-snap on resize/initial
-    xOuter.set(-activeDate * stepRef.current);
+    animate(xOuter, -activeDate * stepRef.current, {
+      type: "spring",
+      stiffness: 180,
+      damping: 26,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepRef.current]);
+  }, [activeDate]);
 
   function onOuterDragEnd(_: unknown, info: PanInfo) {
     const step = stepRef.current || 1;
@@ -159,8 +168,8 @@ function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
     snapInner(idx + moved);
   }
 
-  const weekday = new Date(memory.date).toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(memory.date).toLocaleDateString("en-US", {
+  const weekday = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
+  const dateLabel = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
   });
@@ -350,8 +359,8 @@ function MediaSlide({ item }: { item: Slide }) {
 
 // Locked future-day card with chain/lock visual.
 export function LockedDayCard({ date, title }: { date: string; title?: string }) {
-  const weekday = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(date).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  const weekday = new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
+  const dateLabel = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" });
   return (
     <article
       className="shrink-0 w-[86vw] max-w-[380px] glass rounded-[28px] p-5 relative opacity-70"

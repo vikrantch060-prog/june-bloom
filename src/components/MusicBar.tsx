@@ -47,7 +47,7 @@ export function MusicBar({ title, artist, visible, spotifyId }: Props) {
                 height="152"
                 frameBorder={0}
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
+                loading="eager"
                 title="Spotify player"
                 style={{ border: 0, display: "block" }}
               />
