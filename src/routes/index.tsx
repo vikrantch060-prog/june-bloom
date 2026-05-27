@@ -70,7 +70,6 @@ function Home() {
   const [activeIndex, setActiveIndex] = useState(todayIdx);
   useEffect(() => { setActiveIndex(todayIdx); }, [todayIdx]);
   const activeMemory = unlocked[activeIndex] ?? unlocked[unlocked.length - 1];
-  const current = unlocked[unlocked.length - 1];
   const finalCardText = meta.finalCardText ?? "every day was a love letter. this was the last page.";
 
   const handleBegin = () => {
