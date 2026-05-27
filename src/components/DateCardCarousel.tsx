@@ -168,8 +168,8 @@ function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
     snapInner(idx + moved);
   }
 
-  const weekday = new Date(memory.date).toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(memory.date).toLocaleDateString("en-US", {
+  const weekday = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
+  const dateLabel = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
   });
@@ -359,8 +359,8 @@ function MediaSlide({ item }: { item: Slide }) {
 
 // Locked future-day card with chain/lock visual.
 export function LockedDayCard({ date, title }: { date: string; title?: string }) {
-  const weekday = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(date).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  const weekday = new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
+  const dateLabel = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" });
   return (
     <article
       className="shrink-0 w-[86vw] max-w-[380px] glass rounded-[28px] p-5 relative opacity-70"
