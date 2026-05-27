@@ -9,6 +9,14 @@ type Slide =
   | { kind: "video"; url?: string; gradient: string; caption?: string }
   | { kind: "note"; gradient: string; text: string };
 
+
+function formatDateLabel(iso: string, opts: Intl.DateTimeFormatOptions): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", { ...opts, timeZone: "Asia/Kolkata" }).format(
+    new Date(Date.UTC(y, m - 1, d, 12, 0, 0)),
+  );
+}
+
 interface Props {
   memories: Memory[];
   initialIndex?: number;
@@ -168,11 +176,8 @@ function DateCard({ memory, isActive }: { memory: Memory; isActive: boolean }) {
     snapInner(idx + moved);
   }
 
-  const weekday = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(memory.date + "T12:00:00").toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-  });
+  const weekday = formatDateLabel(memory.date, { weekday: "long" });
+  const dateLabel = formatDateLabel(memory.date, { month: "short", day: "2-digit" });
 
   return (
     <motion.article
@@ -359,8 +364,8 @@ function MediaSlide({ item }: { item: Slide }) {
 
 // Locked future-day card with chain/lock visual.
 export function LockedDayCard({ date, title }: { date: string; title?: string }) {
-  const weekday = new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  const weekday = formatDateLabel(date, { weekday: "long" });
+  const dateLabel = formatDateLabel(date, { month: "short", day: "2-digit" });
   return (
     <article
       className="shrink-0 w-[86vw] max-w-[380px] glass rounded-[28px] p-5 relative opacity-70"
