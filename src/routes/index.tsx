@@ -63,6 +63,13 @@ function Home() {
     () => slots.filter((s) => !s.locked && s.memory && !s.isFinal).map((s) => s.memory!),
     [slots],
   );
+  const todayIdx = useMemo(() => {
+    const i = unlocked.findIndex((m) => m.date === today);
+    return i >= 0 ? i : Math.max(0, unlocked.length - 1);
+  }, [unlocked, today]);
+  const [activeIndex, setActiveIndex] = useState(todayIdx);
+  useEffect(() => { setActiveIndex(todayIdx); }, [todayIdx]);
+  const activeMemory = unlocked[activeIndex] ?? unlocked[unlocked.length - 1];
   const current = unlocked[unlocked.length - 1];
   const finalCardText = meta.finalCardText ?? "every day was a love letter. this was the last page.";
 
