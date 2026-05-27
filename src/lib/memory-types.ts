@@ -62,22 +62,27 @@ export function isUnlocked(date: string, today = todayIso()): boolean {
   return date <= today;
 }
 
+/** Increment a YYYY-MM-DD string by one calendar day using UTC arithmetic only. */
+function nextDay(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + 1));
+  return dt.toISOString().slice(0, 10);
+}
+
 export function buildSlots(meta: MetaConfig, memories: Memory[], today = todayIso()): DaySlot[] {
   const byDate = new Map(memories.map((m) => [m.date, m]));
   const slots: DaySlot[] = [];
-  const start = new Date(meta.launchDate + "T00:00:00");
-  const end = new Date(meta.finalDate + "T00:00:00");
-  const cursor = new Date(start);
+  let cursor = meta.launchDate;
+  const end = meta.finalDate;
   while (cursor <= end) {
-    const iso = cursor.toISOString().slice(0, 10);
     slots.push({
-      date: iso,
-      locked: iso > today,
-      isToday: iso === today,
-      isFinal: iso === FINAL_DATE_ISO,
-      memory: byDate.get(iso),
+      date: cursor,
+      locked: cursor > today,
+      isToday: cursor === today,
+      isFinal: cursor === FINAL_DATE_ISO,
+      memory: byDate.get(cursor),
     });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor = nextDay(cursor);
   }
   return slots;
 }
