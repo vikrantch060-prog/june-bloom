@@ -9,6 +9,14 @@ type Slide =
   | { kind: "video"; url?: string; gradient: string; caption?: string }
   | { kind: "note"; gradient: string; text: string };
 
+
+function formatDateLabel(iso: string, opts: Intl.DateTimeFormatOptions): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", { ...opts, timeZone: "Asia/Kolkata" }).format(
+    new Date(Date.UTC(y, m - 1, d, 12, 0, 0)),
+  );
+}
+
 interface Props {
   memories: Memory[];
   initialIndex?: number;
