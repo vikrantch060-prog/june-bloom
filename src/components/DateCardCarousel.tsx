@@ -12,11 +12,15 @@ type Slide =
 interface Props {
   memories: Memory[];
   initialIndex?: number;
+  activeIndex?: number;
+  onActiveChange?: (i: number) => void;
 }
 
-export function DateCardCarousel({ memories, initialIndex }: Props) {
+export function DateCardCarousel({ memories, initialIndex, activeIndex, onActiveChange }: Props) {
   const start = typeof initialIndex === "number" ? initialIndex : memories.length - 1;
-  const [activeDate, setActiveDate] = useState(Math.max(0, start));
+  const [internalActive, setInternalActive] = useState(Math.max(0, start));
+  const isControlled = typeof activeIndex === "number";
+  const activeDate = isControlled ? activeIndex! : internalActive;
   const xOuter = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef(0);
@@ -33,7 +37,8 @@ export function DateCardCarousel({ memories, initialIndex }: Props) {
 
   function snap(next: number) {
     const clamped = Math.max(0, Math.min(memories.length - 1, next));
-    setActiveDate(clamped);
+    if (!isControlled) setInternalActive(clamped);
+    onActiveChange?.(clamped);
     animate(xOuter, -clamped * stepRef.current, {
       type: "spring",
       stiffness: 180,
@@ -41,11 +46,15 @@ export function DateCardCarousel({ memories, initialIndex }: Props) {
     });
   }
 
+  // Re-snap whenever the active index changes (including from external controllers).
   useEffect(() => {
-    // re-snap on resize/initial
-    xOuter.set(-activeDate * stepRef.current);
+    animate(xOuter, -activeDate * stepRef.current, {
+      type: "spring",
+      stiffness: 180,
+      damping: 26,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepRef.current]);
+  }, [activeDate]);
 
   function onOuterDragEnd(_: unknown, info: PanInfo) {
     const step = stepRef.current || 1;
