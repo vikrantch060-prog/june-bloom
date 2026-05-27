@@ -122,7 +122,11 @@ function Home() {
 
           <section className="mt-10">
             {unlocked.length > 0 ? (
-              <DateCardCarousel memories={unlocked} />
+              <DateCardCarousel
+                memories={unlocked}
+                activeIndex={activeIndex}
+                onActiveChange={setActiveIndex}
+              />
             ) : (
               <div className="px-6 max-w-md mx-auto text-center">
                 <p className="font-display italic text-lg text-[var(--muted-foreground)]">
@@ -141,10 +145,10 @@ function Home() {
       )}
 
       <MusicBar
-        visible={started && !!(openMemory ?? current) && !showFinal}
-        title={(openMemory ?? current)?.song.title ?? ""}
-        artist={(openMemory ?? current)?.song.artist ?? ""}
-        spotifyId={(openMemory ?? current)?.song.spotifyId}
+        visible={started && !!activeMemory && !showFinal}
+        title={activeMemory?.song.title ?? ""}
+        artist={activeMemory?.song.artist ?? ""}
+        spotifyId={activeMemory?.song.spotifyId}
       />
 
 
@@ -153,8 +157,8 @@ function Home() {
         onClose={() => setCalendarOpen(false)}
         onPick={(d) => {
           setCalendarOpen(false);
-          const m = memories.find((mm) => mm.date === d);
-          if (m) setOpenMemory(m);
+          const idx = unlocked.findIndex((m) => m.date === d);
+          if (idx >= 0) setActiveIndex(idx);
         }}
         slots={slots}
       />
