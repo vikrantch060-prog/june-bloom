@@ -1,92 +1,46 @@
-## Goal
+# Three bug fixes for june-bloom
 
-Turn the app into a date-driven content engine. All memories live in a Google Sheet. The UI generates date cards, carousels, music, unlock states, and the calendar from that data. Adding/editing a row in the sheet = a new memory live in the app. No code changes.
+## Bug 1 — Spotify autoplay & track switching
 
-## Archive model
+**File:** `src/components/MusicBar.tsx`
 
-- **Day 1** = the website launch date (first time the app boots in production we capture "today" as the launch date, stored client-side in `localStorage` as a fallback; the canonical launch date also lives in the sheet's `meta` tab so it survives device changes).
-- **Final day** = `2026-06-23` (already defined as `FINAL_DATE`).
-- Each calendar day between launch and final date is a slot. A row in the sheet is matched to its slot by `date` (YYYY-MM-DD).
-- **Unlock logic**: `today's date >= row.date` → unlocked; future → locked/chained; missing row for a past date → renders a soft "untitled day" placeholder so the timeline stays unbroken.
-- **Countdown**: `sunsets remaining = FINAL_DATE − today` (already implemented, kept).
-- **Highlight**: today's card gets the "now" treatment (ring, label, autoscroll target).
+- Append `&autoplay=1` to the Spotify embed src (already present per earlier summary — verify and keep).
+- Change iframe `loading` attribute to `"eager"` so it mounts immediately instead of lazy-loading after scroll.
+- Add `key={spotifyId}` to the iframe element so React fully remounts it when the track changes, forcing Spotify to load and autoplay the new track instead of keeping the old player instance.
 
-## Data source: Google Sheets via connector
+## Bug 2 — Music doesn't sync when swiping carousel / calendar picks open dialog
 
-One spreadsheet, two tabs:
+Root cause: `DateCardCarousel` owns `activeDate` as private state, so `index.tsx` can't know which memory is currently centered. Music is therefore tied to `current` (today) or to `openMemory` (dialog), never to the swiped card. Calendar also opens a separate dialog instead of navigating the carousel.
 
-**Tab `memories`** — one row per day:
+**File:** `src/components/DateCardCarousel.tsx`
+- Convert to a controlled component: accept `activeIndex: number` and `onActiveChange: (i: number) => void` props.
+- Replace internal `useState(activeDate)` with the prop; call `onActiveChange` from `snap()` and dot buttons.
+- Keep `initialIndex` only as a fallback when uncontrolled.
 
-```text
-date | title | quote | song_title | song_artist | youtube_id | photos | videos | notes | unlock_message
-```
+**File:** `src/routes/index.tsx`
+- Lift state: `const [activeIndex, setActiveIndex] = useState(unlocked.length - 1)`.
+- Pass `activeIndex` + `onActiveChange={setActiveIndex}` to `<DateCardCarousel>`.
+- Derive `activeMemory = unlocked[activeIndex] ?? current` and feed `MusicBar` from it (replacing the current `openMemory ?? current` for the carousel-driven path).
+- Calendar `onPick(d)`: instead of `setOpenMemory(m)`, find the index of `d` within `unlocked` and call `setActiveIndex(idx)` + close the calendar. The dialog path is no longer used for calendar picks; the carousel scrolls to that day and the music bar follows automatically.
+- Keep `MemoryDialog` mount for any other future trigger, but calendar no longer opens it.
 
-- `date`: `YYYY-MM-DD`
-- `photos`, `videos`, `notes`: pipe-separated lists (`url1 | url2 | url3`) — Cloudinary URLs for media, plain text for notes
-- `unlock_message`: optional; if present, the row is treated as a "third-day surprise"
+When `activeIndex` changes from outside (e.g., calendar pick), the carousel's `useEffect` on `activeDate`/`stepRef` must re-run the `animate(xOuter, ...)` snap so the swipe visually follows. Add an effect that animates to the new controlled `activeIndex`.
 
-**Tab `meta`** — single row of key/value config:
+## Bug 3 — Wrong start date (off-by-one) & carousel landing on wrong card
 
-```text
-key            | value
-launch_date    | 2026-05-25
-final_date     | 2026-06-23
-hero_title     | today, & every day before it.
-```
+Two sub-causes:
 
-## Architecture
+**3a. Carousel default index** — `initialIndex` defaults to `memories.length - 1`, but when memories include unreleased days this lands on the wrong card. With the controlled refactor above, `index.tsx` sets `activeIndex` to the index of today within `unlocked` (which excludes locked days), so the carousel always lands on today.
 
-```text
-Google Sheet (memories + meta)
-        │
-        ▼
-src/lib/memories.functions.ts    ← createServerFn, calls connector gateway
-        │  returns { meta, memories: Memory[] }
-        ▼
-TanStack Query (queryKey: ['memories'])
-        │
-        ▼
-src/routes/index.tsx (loader: ensureQueryData → useSuspenseQuery)
-        │
-        ▼
-DateCardCarousel / Calendar / MusicBar / MemoryDialog
-```
+**3b. Timezone off-by-one with `YYYY-MM-DD`** — `new Date("2026-06-23")` parses as UTC midnight, which renders as the previous day in IST/PST. 
 
-### Files to add/change
+**Files:** `src/components/DateCardCarousel.tsx` (both `DateCard` and `LockedDayCard` weekday/date label construction)
+- Change `new Date(memory.date)` → `new Date(memory.date + "T12:00:00")` everywhere a date-string is converted for display formatting (weekday + month/day labels). Noon avoids DST/timezone day flips.
+- Audit `Calendar.tsx` and `MemoryDialog.tsx` for the same pattern and apply the `T12:00:00` fix where date strings are parsed for display.
 
-- **Add** `src/lib/memories.functions.ts` — `getMemoryArchive` server function that fetches both sheet tabs through the gateway (`https://connector-gateway.lovable.dev/google_sheets/v4/spreadsheets/{ID}/values:batchGet?ranges=memories!A:Z&ranges=meta!A:B`), parses rows into typed `Memory[]` + `MetaConfig`, validates with Zod, and returns a plain DTO.
-- **Add** `src/lib/memory-types.ts` — shared `Memory`, `MediaItem`, `MetaConfig` types + parsing helpers (split pipe lists, normalize dates, derive `locked`/`isToday`).
-- **Replace** `src/lib/days.ts` — keep the `Memory` type re-export but remove all hardcoded `MEMORIES` / `FUTURE` / `G` gradients. Existing imports keep working.
-- **Edit** `src/routes/index.tsx` — loader primes the query; component reads via `useSuspenseQuery`; passes memories + meta into existing components.
-- **Edit** `src/components/Calendar.tsx`, `DateCardCarousel.tsx`, `DayCard.tsx`, `MemoryDialog.tsx`, `MusicBar.tsx` — accept memories as props (already mostly do); render media from `photos`/`videos` URLs instead of gradients; show placeholder gradient only when a memory has no media.
-- **Edit** `src/lib/time.ts` — `FINAL_DATE` stays; add `getLaunchDate(meta)` and `isUnlocked(date, today)` helpers.
-- **Add spreadsheet ID** as a runtime secret: `MEMORIES_SHEET_ID` (so the sheet can be swapped without redeploying).
+## Verification
 
-### Connector wiring
-
-1. Link the user's existing Google Sheets connection to the project (`standard_connectors--connect` with `google_sheets`).
-2. Server function reads `process.env.LOVABLE_API_KEY`, `process.env.GOOGLE_SHEETS_API_KEY`, `process.env.MEMORIES_SHEET_ID` and calls the gateway. Token refresh is automatic.
-3. Cache: TanStack Query `staleTime: 5 minutes` so the sheet is re-read regularly but not on every nav.
-
-### Unlock + render rules (client)
-
-- Today = `new Date()` truncated to local midnight.
-- For each date between launch and final:
-  - if a sheet row exists and `date <= today` → render full card.
-  - if `date <= today` but no row → render "a quiet day" placeholder card (still counts as unlocked).
-  - if `date > today` → render locked chain card (title from sheet if present, else generic).
-- Calendar lists all days; locked ones are disabled.
-- `MusicBar` and the hero subtitle bind to "today's" memory.
-
-## What you get
-
-- Add a row in Google Sheets → memory appears on its date with photos, video, quote, song, unlock message.
-- No code edits needed to add days, swap songs, change media, or extend past 2026-06-23.
-- Locking, countdown, today-highlight, and calendar all derive from the sheet.
-
-## Setup the user does once (I'll guide step-by-step after approval)
-
-1. Copy the starter sheet template (I'll generate the exact column headers).
-2. Paste the spreadsheet ID when prompted (stored as `MEMORIES_SHEET_ID` secret).
-3. Connect Google Sheets via the connector picker.
-4. Start adding rows — page updates on next refresh.
+- Swipe carousel → MusicBar title/artist/spotifyId updates → new track autoplays.
+- Open calendar, pick a past day → calendar closes, carousel scrolls to that day, music updates. No dialog opens.
+- Carousel opens centered on today (not yesterday, not last memory in sheet).
+- Weekday labels match the actual date in IST.
