@@ -41,16 +41,19 @@ export function MusicBar({ title, artist, visible, spotifyId }: Props) {
           transition={{ type: "spring", stiffness: 220, damping: 26 }}
           className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-[min(92vw,440px)]"
         >
-          <AnimatePresence>
-            {expanded && embedSrc && (
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                className="mb-2 rounded-2xl overflow-hidden shadow-2xl relative glass"
-                style={{ height: 152 }}
-              >
+          <motion.div
+            animate={{
+              height: expanded && embedSrc ? 152 : 0,
+              opacity: expanded && embedSrc ? 1 : 0,
+              marginBottom: expanded && embedSrc ? 8 : 0,
+            }}
+            initial={false}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            className="rounded-2xl overflow-hidden shadow-2xl relative glass"
+            style={{ pointerEvents: expanded && embedSrc ? "auto" : "none" }}
+          >
+            {embedSrc && (
+              <>
                 <iframe
                   key={spotifyId}
                   src={embedSrc}
@@ -64,7 +67,7 @@ export function MusicBar({ title, artist, visible, spotifyId }: Props) {
                   onClick={() => setTapped(true)}
                 />
                 <AnimatePresence>
-                  {!tapped && (
+                  {!tapped && expanded && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -97,9 +100,10 @@ export function MusicBar({ title, artist, visible, spotifyId }: Props) {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </>
             )}
-          </AnimatePresence>
+          </motion.div>
+
 
           <div className="glass rounded-full pl-2 pr-3 py-2 flex items-center gap-3">
             <button
