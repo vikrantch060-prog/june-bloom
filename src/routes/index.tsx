@@ -101,9 +101,6 @@ function Home() {
           <TopBar onOpenCalendar={() => setCalendarOpen(true)} />
 
           <section className="pt-24 px-6 max-w-md mx-auto">
-            <div className="text-[10px] uppercase tracking-[0.35em] text-[var(--muted-foreground)] mb-2">
-              {mode === "morning" ? "lazy romance" : mode === "evening" ? "cozy bookstore" : "stargazing"}
-            </div>
             <h1 className="font-display text-4xl leading-[1.05] text-balance">
               {unlocked.length === 0
                 ? "the very beginning"
@@ -129,7 +126,7 @@ function Home() {
             ) : (
               <div className="px-6 max-w-md mx-auto text-center">
                 <p className="font-display italic text-lg text-[var(--muted-foreground)]">
-                  the first memory unlocks today. add a row to the archive to begin.
+                  the first memory unlocks today.
                 </p>
               </div>
             )}
@@ -137,7 +134,7 @@ function Home() {
 
           <section className="px-6 max-w-md mx-auto mt-6 text-center">
             <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--muted-foreground)]">
-              tomorrow is locked. come back.
+              Tomorrow is mystery, But Today is a Gift
             </div>
           </section>
         </motion.main>
